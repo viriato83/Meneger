@@ -1,15 +1,16 @@
 {
   "files": {
-    "main.css": "/Meneger/static/css/main.6da9bd89.css",
-    "main.js": "/Meneger/static/js/main.b5fc1bed.js",
+    "main.css": "/Meneger/static/css/main.cb75e06d.css",
+    "main.js": "/Meneger/static/js/main.5e69c44c.js",
     "static/js/488.1d4ce58e.chunk.js": "/Meneger/static/js/488.1d4ce58e.chunk.js",
+    "static/media/logo_white-removebg2.png": "/Meneger/static/media/logo_white-removebg2.3b77a9772ef5abc348d5.png",
     "index.html": "/Meneger/index.html",
-    "main.6da9bd89.css.map": "/Meneger/static/css/main.6da9bd89.css.map",
-    "main.b5fc1bed.js.map": "/Meneger/static/js/main.b5fc1bed.js.map",
+    "main.cb75e06d.css.map": "/Meneger/static/css/main.cb75e06d.css.map",
+    "main.5e69c44c.js.map": "/Meneger/static/js/main.5e69c44c.js.map",
     "488.1d4ce58e.chunk.js.map": "/Meneger/static/js/488.1d4ce58e.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.6da9bd89.css",
-    "static/js/main.b5fc1bed.js"
+    "static/css/main.cb75e06d.css",
+    "static/js/main.5e69c44c.js"
   ]
 }
