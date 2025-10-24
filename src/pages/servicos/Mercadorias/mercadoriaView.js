@@ -18,7 +18,10 @@ export default function MercadoriaView() {
   const repositoriovenda= new repositorioVenda()
   const [modelo, setModelo] = useState([]);
   const [total, setTotal] = useState(0);
-  const [id, setId] = useState(""); // Estado para o ID digitado
+  const [id, setId] = useState(""); // Estado para o ID 
+  const [dataInicio, setDataInicio] = useState("");
+const [dataFim, setDataFim] = useState("");
+
   const navigate = useNavigate();
 const permissao= sessionStorage.getItem("cargo");
   const [loading, setLoading] = useState(false); // Estado para exibir o loading
@@ -122,6 +125,21 @@ const permissao= sessionStorage.getItem("cargo");
               </option>
             ))}
           </select>
+          <label>Filtrar por Data:</label>
+<div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+  <input
+    type="date"
+    value={dataInicio}
+    onChange={(e) => setDataInicio(e.target.value)}
+  />
+  <span>até</span>
+  <input
+    type="date"
+    value={dataFim}
+    onChange={(e) => setDataFim(e.target.value)}
+  />
+</div>
+
           <div className="tabela">
             <table>
               <thead>
@@ -145,7 +163,11 @@ const permissao= sessionStorage.getItem("cargo");
               <tbody>
               {modelo.map((elemento, i) => {
                 console.log(elemento)
-                    if (!stockSelecionado || elemento.stock.idstock == stockSelecionado) {
+                if (
+                  (!stockSelecionado || elemento.stock.idstock == stockSelecionado) &&
+                  (!dataInicio || new Date(elemento.data_entrada) >= new Date(dataInicio)) &&
+                  (!dataFim || new Date(elemento.data_entrada) <= new Date(dataFim))
+                ) {
                       return (
                         <tr key={i}>
                           <td>{elemento.idmercadoria}</td>
