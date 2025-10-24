@@ -46,25 +46,41 @@ export default function RegistarMortalidade() {
   function calculaQuantidade() {
     const estoque = stocks.find(e => e.idstock == Stock);
     if (!estoque) return 0; // se não achar o stock
-    return estoque.quantidade - inputs.quantidade;
+    return estoque.quantidade - Number(inputs.quantidade); // <-- CONVERTER
   }
+  
 
   const criaMortalidade = () => {
     return new Mortalidade(inputs.descricao, inputs.quantidade, inputs.data,Stock);
   };
 
   const cadastrar =async () => {
-    if (id) {
-      await repositorio.editar(id, criaMortalidade());
-    } else {
-      if (!inputs.descricao || !inputs.quantidade || !inputs.data) {
-        msg.Erro("Preencha corretamente todos os campos");
+
+      if (id) {
+        await repositorio.editar(id, criaMortalidade());
       } else {
-        await repoStock.editar(Stock,new stock(calculaQuantidade()))
-        await   repositorio.cadastrar(criaMortalidade());
-        limparFormulario(); // Limpa o formulário após o cadastro
+        if (!inputs.descricao || !inputs.quantidade || !inputs.data) {
+          msg.Erro("Preencha corretamente todos os campos");
+        } else {
+          const estoque = stocks.find(e => e.idstock == Stock);
+          if (!estoque) {
+            msg.Erro("Stock não encontrado");
+            return;
+          }
+    
+          // Atualiza a quantidade disponível no stock
+          const novaQuantidade = estoque.quantidade - Number(inputs.quantidade);
+          await repoStock.editar3(Stock,novaQuantidade );
+    
+          // Agora cadastra a mortalidade
+          await repositorio.cadastrar(criaMortalidade());
+    
+          limparFormulario(); // Limpa o formulário após o cadastro
+          msg.sucesso("Mortalidade registrada e stock atualizado");
+        }
       }
-    }
+    
+    
   };
 
   function agruparStock(){

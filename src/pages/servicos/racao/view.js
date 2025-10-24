@@ -118,8 +118,8 @@ export default function RacaoView() {
                     <th>Valor un (MZN)</th>
                     
                     <th className="linha-divisoria">Valor Total (MZN)</th>
-                    <th>Qtd Saída</th>
                     <th>Data Saída</th>
+                    <th>Qtd Saída</th>
                     <th>Qtd Disponível</th>
                
                    

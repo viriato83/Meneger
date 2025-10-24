@@ -125,6 +125,34 @@ export default class repositorioStock{
         }
       }
     
+      async editar3(Id, cliente) {
+        try {
+          let res = await fetch(this.endpoint, {  // Adicione 'await' e corrija o endpoint
+            method: "PUT", 
+            headers: {
+              "Authorization": "Bearer " + this.token,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: Id ,...cliente}) 
+           
+          });
+          console.log(JSON.stringify({ id: Id ,quantidade:cliente}))
+    
+          if (res.status==200) {
+            console.log("Editado com sucesso"); 
+            this.mensagem.sucesso("Editado com sucesso");  
+            return true;
+          } else {
+            console.log("Erro ao editar:", res.status);
+            this.mensagem.Erro("Erro ao editar");
+            return false;
+          }
+        } catch (e) {
+          console.error("Erro ao editar:", e);
+          return false;
+        }
+      }
+    
       async deletar(Id) {  // Renomeado de 'editar' para 'deletar'
         try {
           let res = await fetch(this.endpoint, {  // Adicione 'await' e corrija o endpoint
