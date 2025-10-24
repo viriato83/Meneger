@@ -67,7 +67,7 @@ export default class repositorioStock{
       } 
       async buscarMercadoria(){
         try {
-            const res = await fetch("https://api1.mozsystems.com/tenant1/mercadoria", {  // Adicione 'await' e utilize o this.endpoint
+            const res = await fetch("http://localhost:5000/tenant1/mercadoria", {  // Adicione 'await' e utilize o this.endpoint
               method: 'GET',
               
               headers: {

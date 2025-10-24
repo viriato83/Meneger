@@ -47,7 +47,7 @@ export default function RegistarMercadoria() {
       }
       grupos[data].options.push({
         value: item.idstock,
-        label: `${item.idstock}. ${item.tipo} (${item.quantidade} kg)`,
+        label: `${item.idstock}. ${item.tipo} (${item.quantidade})`,
       });
       return grupos;
     }, {})

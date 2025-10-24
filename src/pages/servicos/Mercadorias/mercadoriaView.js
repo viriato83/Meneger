@@ -151,8 +151,8 @@ const permissao= sessionStorage.getItem("cargo");
                           <td>{elemento.idmercadoria}</td>
                           <td>{elemento.nome}</td>
                           <td>{elemento.tipo}</td>
-                          <td>{elemento.quantidade_est}</td>
-                          <td>{elemento.quantidade}</td>
+                          <td>{elemento.quantidade_est.toFixed(2)}</td>
+                          <td>{elemento.quantidade.toFixed(2)}</td>
                           <td>{elemento.data_entrada}</td>
                           <td>{elemento.valor_un} Mt</td>
                           <td>

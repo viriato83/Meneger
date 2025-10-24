@@ -41,7 +41,7 @@ export default function RegistarStock() {
   const criaStock = () => {
     return new stock(inputs.quantidade, inputs.tipo,usuario,inputs.data, inputs.mercadoria);
   };
-
+console.log(criaStock())
   const validarCampos = () => {
     if (!inputs.quantidade || !inputs.tipo ) {
       msg.Erro("Preencha todos os campos obrigatórios.");
