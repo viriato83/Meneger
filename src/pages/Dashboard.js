@@ -161,7 +161,7 @@ export default function Dashboard() {
         );
       });
     });
-
+   
     const wsGrafico = XLSX.utils.json_to_sheet(
       vendasFiltradas.map((venda) => ({
         ID: venda.idvendas,
@@ -244,17 +244,24 @@ export default function Dashboard() {
         let quantidadeDivida = 0;
 
         vendasT.forEach((e) => {
+          console.log(e)
           const dataVenda = new Date(e.data);
           const anoMes = `${dataVenda.getFullYear()}-${String(dataVenda.getMonth() + 1).padStart(2, "0")}`;
 
           e.mercadorias.forEach((o) => {
             if ((!mesSelecionado || anoMes === mesSelecionado) && (!stockSelecionado || (stockSelecionado && stockSelecionado == o.stock.idstock))) {
               if (e.status_p === "Em_Divida") {
-                quantidadeTotal2 += Number(e.quantidade || 0);
-                quantidadeDivida += Number(e.valor_total || 0);
+                e.itensVenda.forEach((item) => {
+                  quantidadeTotal2 += Number(item.quantidade|| 0);
+                  quantidadeDivida += Number(e.valor_total|| 0);
+                })
               } else {
-                quantidadeTotal += Number(e.quantidade || 0);
-                valorTotalVendas += Number(e.valor_total || 0);
+         
+                e.itensVenda.forEach((item) => {
+                  quantidadeTotal +=Number(item.quantidade|| 0);
+          
+                  valorTotalVendas += Number(e.valor_total|| 0);
+              })
               }
             }
           });
@@ -279,6 +286,7 @@ export default function Dashboard() {
         // cálculos de mercadorias (preservado)
         let contador1 = 0;
         let contador2 = 0;
+        let contador3 = 0;
 
         mercT.forEach((e) => {
           const dataMercadoria = new Date(e.data_entrada);
@@ -286,17 +294,19 @@ export default function Dashboard() {
 
           if ((!mesSelecionado || anoMes === mesSelecionado) && (!stockSelecionado || (stockSelecionado && stockSelecionado == e.stock.idstock))) {
             if (e.tipo != null) {
-              contador1 += Number(e.quantidade_est || 0);
+              contador1 += Number(e.stock.quantidade_estoque || 0);
+              contador3 += Number(e.quantidade || 0);
             }
             if (e.tipo != null) {
               contador2 += Number(e.quantidade || 0);
+            
             }
           }
         });
 
         setTotalMerc(contador2);
         setEntradada(contador1.toFixed(2));
-        setSaida(totalVendas.toFixed(2));
+        setSaida(contador3);
       } catch (error) {
         console.error("Erro ao carregar dashboard:", error);
       } finally {
@@ -400,7 +410,7 @@ export default function Dashboard() {
       mercDados.forEach((m) => {
         const d = new Date(m.data_entrada);
         const chave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        mapEntradas[chave] = (mapEntradas[chave] || 0) + Number(m.quantidade_est || 0);
+        mapEntradas[chave] = (mapEntradas[chave] || 0) + Number(m.stock.quantidade_estoque || 0);
       });
 
       // merge labels
@@ -427,7 +437,7 @@ export default function Dashboard() {
             },
             {
               type: "line",
-              label: "Entradas (kg)",
+              label: "Entradas ",
               data: entradasVals,
               borderColor: "rgba(54, 162, 235, 1)",
               tension: 0.3,
@@ -449,7 +459,7 @@ export default function Dashboard() {
               beginAtZero: true,
               position: "right",
               grid: { drawOnChartArea: false },
-              title: { display: true, text: "Entradas (kg)" },
+              title: { display: true, text: "Entradas " },
             },
           },
         },
@@ -537,7 +547,7 @@ export default function Dashboard() {
 
           <div style={{ display: "grid", gap: 12, alignItems: "center", marginBottom: 12 }}>
             <div style={{ flex: 1 }}>
-              <label style={{ fontWeight: 600 }}>Filtrar por Gaiola:</label>
+              <label style={{ fontWeight: 600 }}>Filtrar por stock:</label>
               <select
                 value={stockSelecionado}
                 onChange={(e) => setLoteS(e.target.value)}
@@ -546,7 +556,7 @@ export default function Dashboard() {
                 <option value={0}>Todas Gaiolas</option>
                 {modelo2.map((stock) => (
                   <option key={stock.idstock} value={stock.idstock}>
-                    Gaiolas {stock.tipo}
+                    Gaiola {stock.tipo}
                   </option>
                 ))}
               </select>
@@ -578,31 +588,31 @@ export default function Dashboard() {
             <KpiCard title="Total Clientes" value={formatNumber(cards[0] || 0)} icon={<Users />} color="#4fc3f7" />
             <KpiCard
               title="Vendas Pagas"
-              value={`${formatNumber(Number(cards[2] || 0).toFixed(2))} kg`}
+              value={`${Number(total.toFixed(2)|| 0)} `}
               icon={<TrendingUp />}
               color="#66bb6a"
             />
             <KpiCard
               title="Vendas em Dívida"
-              value={`${formatNumber(totalDivida || 0)} kg`}
+              value={`${formatNumber(totalDivida.toFixed(2) || 0)} `}
               icon={<TrendingDown />}
               color="#ef5350"
             />
             <KpiCard
               title="Total Mercadorias"
-              value={`${formatNumber(cards[1] || 0)} kg`}
+              value={`${formatNumber(cards[1] || 0)} `}
               icon={<Box />}
               color="#ffa726"
             />
             <KpiCard
               title="Total Entradas"
-              value={`${formatNumber(entrada || 0)} kg`}
+              value={`${formatNumber(entrada || 0)} `}
               icon={<List />}
               color="#42a5f5"
             />
             <KpiCard
               title="Total Saídas"
-              value={`${formatNumber((Number(cards[3] || 0) + Number(cards[2] || 0)).toFixed(2))} kg`}
+              value={`${saida.toFixed(2)} `}
               icon={<DollarSign />}
               color="#7e57c2"
             />

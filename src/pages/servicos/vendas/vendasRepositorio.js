@@ -22,13 +22,13 @@ export class repositorioVenda{
     
           if (res.ok) {  // Use 'res.ok' em vez de 'res.status == 200'
             console.log("Cadastro feito com sucesso");
-            this.mensagem.sucesso("cadastro feito com sucesso")
-
+          
           } else {
             console.log("Erro ao cadastrar:", res.status);
           
           }
         } catch (e) {
+          this.mensagem.sucesso("cadastro feito com sucesso")
           console.error("Erro no cadastro:", e);
         
         }

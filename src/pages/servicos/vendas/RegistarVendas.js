@@ -15,6 +15,7 @@ import vendas from "./Vendas";
 import repositorioMercadoria from "../Mercadorias/Repositorio";
 import ClienteRepository from "../Clientes/ClienteRepository";
 import mercadoria from "../Mercadorias/Mercadoria";
+import Loading from "../../../components/loading";
 export default function RegistarVenda() {
   const [inputs, setInputs] = useState({
     quantidade: [],
@@ -108,13 +109,13 @@ export default function RegistarVenda() {
   // array  de itens
 
   
+  const [loading, setLoading] = useState(false);
   const criaVenda = () => {
     const itens = inputs.mercadoria.map((id, index) => {
       const mercadoriaObj = mercadorias.find(m => m.idmercadoria == id);
       const idmercadoria = mercadoriaObj ? mercadoriaObj.idmercadoria : `#${id}`;
       const quantidade = Number(inputs.quantidade?.[index] || 0);
       const valorUnitario = Number(inputs.valorUnitario?.[index] || 0);
-    
       return {
         mercadorias: {idmercadoria},
         quantidade,
@@ -146,6 +147,7 @@ export default function RegistarVenda() {
       mercadoria: [],
       status_p:""
     });
+    window.location.reload()
   };
 // faccturas 
 const carregarImagem = (src) =>
@@ -305,9 +307,9 @@ const cadastrar = async () => {
       let vendaT = await repositorio.buscarVenda(id);
 
       // Exemplo: calcular novaV para cada mercadoria individualmente
-      let quantidade= inputs.quantidade.reduce((anterior,element)=>{
-        return Number(anterior)+Number(element)
-})
+              let quantidade= inputs.quantidade.reduce((anterior,element)=>{
+                return Number(anterior)+Number(element)
+        })
       const novasQuantidades = quantidade - vendaT.quantidade;
     
 
@@ -315,7 +317,7 @@ const cadastrar = async () => {
       await mercadoriaRepo.editar3(inputs.mercadoria, novaMercadoria);
     }
 
-    msg.sucesso("Venda editada com sucesso.");
+ 
     limparFormulario();
     setTimeout(() => {
       window.location.reload();
@@ -346,6 +348,8 @@ const cadastrar = async () => {
 
   try {
     if (inputs.cliente !== status) {
+
+      setLoading(true);
       await repositorio.cadastrar(criaVenda());
    
       // Atualizar mercadorias - espera arrays para mercadorias e quantidades
@@ -385,6 +389,8 @@ const cadastrar = async () => {
   } catch (error) {
     msg.Erro("Erro ao cadastrar venda.");
     console.log(error)
+  }finally{
+    setLoading(false)
   }
 };
 
@@ -410,6 +416,7 @@ const cadastrar = async () => {
 
   return (
     <>
+          {loading && <Loading />} 
       <Header />
       <Conteinner>
         <Slider />
