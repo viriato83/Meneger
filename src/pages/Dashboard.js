@@ -14,8 +14,6 @@ import Loading from "../components/loading";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import {
-  AlertTriangle,
-  Bell,
   TrendingDown,
   TrendingUp,
   Users,
@@ -24,8 +22,10 @@ import {
   List,
 } from "lucide-react";
 
+import "./DashboardFull.css"; // <- NOVO: estilos separados
+
 export default function Dashboard() {
-  // --- REPOSITORIES (mesma forma que tinhas)
+  // --- REPOSITORIES
   const clientes = new ClienteRepository();
   const mercadoria = new repositorioMercadoria();
   const stok = new repositorioStock();
@@ -41,71 +41,70 @@ export default function Dashboard() {
 
   const [loading, setLoading] = useState(false);
 
-  // Estados originais e mantidos (preservados)
+  // Estados preservados
   const [cards, setCard] = useState([]);
   const [modelo2, setModelo2] = useState([]);
-  const [entrada, setEntradada] = useState(0);
-  const [saida, setSaida] = useState(0);
+  const [entrada, setEntradada] = useState(0); // (MT) soma de valor_total das mercadorias
+  const [saida, setSaida] = useState(0); // (MT) soma de valor_total de vendas filtradas
   const [useVenda, setVenda] = useState([]);
   const [useData, setData] = useState([]);
   const [dadosParaExportar, setDadosParaExportar] = useState(null);
   const [stockSelecionado, setLoteS] = useState(0);
   const [mesSelecionado, setMesSelecionado] = useState("");
-  const [Dados2, setDados2] = useState([]);
-  const [Dados3, setDados3] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [quantidadetotal, setQuantidadeTotal] = useState(0);
-  const [totalDivida, setTotalDivida] = useState(0);
-  const [quantiDivida, setQuantiDivida] = useState(0);
-  const [totalMerc, setTotalMerc] = useState(0);
-
-  var [quantidadeTotal, setQuant] = useState(0);
+  const [Dados2, setDados2] = useState([]); // mercadorias
+  const [Dados3, setDados3] = useState([]); // vendas
+  const [total, setTotal] = useState(0); // vendas pagas (kg)
+  const [quantidadetotal, setQuantidadeTotal] = useState(0); // valor vendas pagas (MT)
+  const [totalDivida, setTotalDivida] = useState(0); // quantidade em dívida (kg)
+  const [quantiDivida, setQuantiDivida] = useState(0); // valor em dívida (MT)
+  const [totalMerc, setTotalMerc] = useState(0); // total mercadorias (kg)
+  var [quantidadeTotal, setQuant] = useState(0); // total vendas (kg)
 
   const buscarCargo = () => sessionStorage.getItem("cargo");
 
-  // --- Função original: agruparPorPeriodo (preservada)
+  // --- Agrupar por período (preservado)
   function agruparPorPeriodo(dados, periodo = "dia") {
     const agrupados = {};
-
     dados.forEach((item) => {
       let chave;
       const data = new Date(item.data);
-
       if (periodo === "dia") {
         chave = data.toISOString().split("T")[0];
       } else if (periodo === "semana") {
         const semana = Math.ceil(data.getDate() / 7);
         chave = `${data.getFullYear()}-M${data.getMonth() + 1}-W${semana}`;
       } else if (periodo === "mes") {
-        chave = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
+        chave = `${data.getFullYear()}-${String(
+          data.getMonth() + 1
+        ).padStart(2, "0")}`;
       }
-
-      if (!agrupados[chave]) {
-        agrupados[chave] = 0;
-      }
+      if (!agrupados[chave]) agrupados[chave] = 0;
       agrupados[chave] += item.valor_total;
     });
-
-    return {
-      labels: Object.keys(agrupados),
-      valores: Object.values(agrupados),
-    };
+    return { labels: Object.keys(agrupados), valores: Object.values(agrupados) };
   }
 
-  // --- Export to Excel (mantive e melhorei pequenas partes mantendo a lógica)
-  function exportarParaExcel(dados, nomeArquivo = "dados.xlsx") {
+  // =====================================================
+  // 🧾 EXPORTAR PARA EXCEL — com RESUMO_FINANCEIRO
+  // =====================================================
+  function exportarParaExcel(dados, nomeArquivo = "dashboard_dados.xlsx") {
     if (!dados) return;
-    // sheet 1: resumo básico (dados.infoBasica)
+
+    // 1) Aba "Dados_Resumo"
     const wsDados = XLSX.utils.json_to_sheet(dados.infoBasica || []);
 
-    // entradas (usa Dados2 como antes — garante que está carregado)
-    const MercadoriasFiltradas = Dados2.filter((merc) => {
+    // 2) Aba "Entradas" (respeita filtros)
+    const MercadoriasFiltradas = (Dados2 || []).filter((merc) => {
+      if (!merc) return false;
       const dataMerc = new Date(merc.data_entrada);
-      const anoMes = `${dataMerc.getFullYear()}-${String(dataMerc.getMonth() + 1).padStart(2, "0")}`;
-
+      if (isNaN(dataMerc)) return false;
+      const anoMes = `${dataMerc.getFullYear()}-${String(
+        dataMerc.getMonth() + 1
+      ).padStart(2, "0")}`;
       return (
         (!mesSelecionado || anoMes === mesSelecionado) &&
-        (!stockSelecionado || stockSelecionado == merc.stock.idstock)
+        (!stockSelecionado ||
+          Number(stockSelecionado) === Number(merc.stock?.idstock))
       );
     });
 
@@ -113,77 +112,111 @@ export default function Dashboard() {
       MercadoriasFiltradas.map((merc) => ({
         ID: merc.idmercadoria,
         Nome: merc.nome,
-        Quantidade: Number(merc.quantidade_est || 0).toFixed(2).replace(".", ","),
-        Quantidade_Disponivel: Number(merc.quantidade || 0).toFixed(2).replace(".", ","),
-        ValorUnitario: merc.valor_un,
-        Data: merc.data_entrada,
-        ValorTotal: Number(merc.valor_total || 0).toFixed(2).replace(".", ","),
-        Stock: merc.stock?.idstock ?? "",
-        Usuario: merc.usuario == null ? "0" : merc.usuario.login,
+        "Quantidade Entrada (kg)": Number(merc.quantidade_est || 0)
+          .toFixed(2)
+          .replace(".", ","),
+        "Disponível (kg)": Number(merc.quantidade || 0)
+          .toFixed(2)
+          .replace(".", ","),
+        "Saída (kg)": Number(
+          (merc.quantidade_est || 0) - (merc.quantidade || 0)
+        )
+          .toFixed(2)
+          .replace(".", ","),
+        "Valor Unitário (Mt)": Number(merc.valor_un || 0).toFixed(2),
+        "Valor Total (Mt)": Number(merc.valor_total || 0)
+          .toFixed(2)
+          .replace(".", ","),
+        "Data de Entrada": merc.data_entrada,
+        Gaiola: merc.stock?.tipo || "",
+        Usuário: merc.usuario == null ? "0" : merc.usuario.login,
       }))
     );
 
-    const totalQuantidadeMerc = MercadoriasFiltradas.reduce((acc, merc) => acc + Number(merc.quantidade_est || 0), 0);
-    const totalValorMerc = MercadoriasFiltradas.reduce((acc, merc) => acc + Number(merc.valor_total || 0), 0);
-    const totalDisponivel = MercadoriasFiltradas.reduce((acc, merc) => acc + Number(merc.quantidade || 0), 0);
+    const totalEntradaKg = MercadoriasFiltradas.reduce(
+      (acc, m) => acc + Number(m.quantidade_est || 0),
+      0
+    );
+    const totalDisponivelKg = MercadoriasFiltradas.reduce(
+      (acc, m) => acc + Number(m.quantidade || 0),
+      0
+    );
+    const totalSaidaKg = totalEntradaKg - totalDisponivelKg;
+
+    const totalValorEntradasMt = MercadoriasFiltradas.reduce(
+      (acc, m) => acc + Number(m.valor_total || 0),
+      0
+    );
+    const totalValorDisponivelMt = MercadoriasFiltradas.reduce(
+      (acc, m) => acc + Number(m.quantidade || 0) * Number(m.valor_un || 0),
+      0
+    );
 
     XLSX.utils.sheet_add_json(
       wsEntradas,
       [
         {
           ID: "TOTAL",
-          Quantidade: totalQuantidadeMerc.toFixed(2).replace(".", ","),
-          ValorTotal: totalValorMerc.toFixed(2).replace(".", ","),
-        },
-      ],
-      { skipHeader: true, origin: -1 }
-    );
-    XLSX.utils.sheet_add_json(
-      wsEntradas,
-      [
-        {
-          ID: "Disponivel",
-          Quantidade_Disponivel: totalDisponivel.toFixed(2).replace(".", ","),
+          "Quantidade Entrada (kg)": totalEntradaKg.toFixed(2).replace(".", ","),
+          "Disponível (kg)": totalDisponivelKg.toFixed(2).replace(".", ","),
+          "Saída (kg)": totalSaidaKg.toFixed(2).replace(".", ","),
+          "Valor Total (Mt)": totalValorEntradasMt
+            .toFixed(2)
+            .replace(".", ","),
         },
       ],
       { skipHeader: true, origin: -1 }
     );
 
-    // vendas filtradas (mantendo lógica original de filtros e cálculos)
+    // 3) Aba "Saidas"
     const vendasFiltradas = (dados.grafico || []).filter((venda) => {
       const dataVenda = new Date(venda.data);
-      const anoMes = `${dataVenda.getFullYear()}-${String(dataVenda.getMonth() + 1).padStart(2, "0")}`;
+      const anoMes = `${dataVenda.getFullYear()}-${String(
+        dataVenda.getMonth() + 1
+      ).padStart(2, "0")}`;
 
-      return venda.mercadorias.some((o) => {
-        return (
+      return venda.mercadorias?.some(
+        (o) =>
           (!mesSelecionado || anoMes === mesSelecionado) &&
-          (!stockSelecionado || stockSelecionado == o.stock.idstock)
-        );
-      });
+          (!stockSelecionado ||
+            Number(stockSelecionado) === Number(o.stock?.idstock))
+      );
     });
-   
+
     const wsGrafico = XLSX.utils.json_to_sheet(
       vendasFiltradas.map((venda) => ({
         ID: venda.idvendas,
-        Quantidade: Number(venda.quantidade || 0).toFixed(2).replace(".", ","),
-        ValorUnitario: venda.valor_uni,
+        Quantidade: Number(venda.quantidade || 0)
+          .toFixed(2)
+          .replace(".", ","),
+        "Valor Unitário (Mt)": Number(venda.valor_uni || 0).toFixed(2),
         Data: venda.data,
-        ValorTotal: Number(venda.valor_total || 0).toFixed(2).replace(".", ","),
+        "Valor Total (Mt)": Number(venda.valor_total || 0)
+          .toFixed(2)
+          .replace(".", ","),
         Status: venda.status_p,
-        Mercadoria: venda.mercadorias.map((e) => e.nome).join(", "),
-        Usuario: venda.usuario == null ? "0" : venda.usuario.login,
+        Mercadorias: (venda.mercadorias || []).map((e) => e.nome).join(", "),
+        Usuário: venda.usuario == null ? "0" : venda.usuario.login,
       }))
     );
 
-    const totalQuantidade = vendasFiltradas.reduce((acc, venda) => acc + Number(venda.quantidade || 0), 0);
-    const totalValor = vendasFiltradas.reduce((acc, venda) => acc + Number(venda.valor_total || 0), 0);
+    const totalQuantidadeSaidas = vendasFiltradas.reduce(
+      (acc, v) => acc + Number(v.quantidade || 0),
+      0
+    );
+    const totalValorSaidas = vendasFiltradas.reduce(
+      (acc, v) => acc + Number(v.valor_total || 0),
+      0
+    );
 
-    let temp = 0;
-    let temp2 = 0;
+    let valorDividaMt = 0;
+    let quantidadeDividaKg = 0;
     vendasFiltradas.forEach((e) => {
       if (e.status_p === "Em_Divida") {
-        temp += Number(e.valor_total || 0);
-        temp2 += Number(e.quantidade || 0);
+        e.itensVenda?.forEach((item) => {
+          quantidadeDividaKg += Number(item.quantidade || 0);
+          valorDividaMt += Number(item.valor_total || 0);
+        });
       }
     });
 
@@ -192,121 +225,148 @@ export default function Dashboard() {
       [
         {
           ID: "TOTAL",
-          Quantidade: totalQuantidade.toFixed(2).replace(".", ","),
-          ValorTotal: totalValor.toFixed(2).replace(".", ","),
+          Quantidade: totalQuantidadeSaidas.toFixed(2).replace(".", ","),
+          "Valor Total (Mt)": totalValorSaidas.toFixed(2).replace(".", ","),
         },
       ],
       { skipHeader: true, origin: -1 }
     );
-
     XLSX.utils.sheet_add_json(
       wsGrafico,
       [
         {
-          ID: "TOTAL Divida",
-          quantidadeTotal_divida: temp2.toFixed(2).replace(".", ","),
-          totalDivida: temp.toFixed(2).replace(".", ","),
+          ID: "TOTAL Dívida",
+          "Quantidade (kg)": quantidadeDividaKg.toFixed(2).replace(".", ","),
+          "Valor (Mt)": valorDividaMt.toFixed(2).replace(".", ","),
         },
       ],
       { skipHeader: true, origin: -1 }
     );
 
-    // Monta workbook
+    // 4) Aba "Resumo_Financeiro"
+    const resumoFinanceiro = [
+      {
+        Campo: "Vendas Pagas (Mt)",
+        Valor: Number(quantidadetotal || 0).toFixed(2),
+      },
+      {
+        Campo: "Vendas em Dívida (Mt)",
+        Valor: Number(quantiDivida || 0).toFixed(2),
+      },
+      { Campo: "Entradas (kg)", Valor: Number(entrada || 0).toFixed(2) },
+      { Campo: "Saídas (kg)", Valor: Number(saida || 0).toFixed(2) },
+      { Campo: "Total Mercadorias (kg)", Valor: Number(totalMerc || 0).toFixed(2) },
+    ];
+    const wsResumo = XLSX.utils.json_to_sheet(resumoFinanceiro);
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, wsDados, "Dados_Resumo");
     XLSX.utils.book_append_sheet(wb, wsGrafico, "Saidas");
     XLSX.utils.book_append_sheet(wb, wsEntradas, "Entradas");
+    XLSX.utils.book_append_sheet(wb, wsResumo, "Resumo_Financeiro");
 
     const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
     saveAs(blob, nomeArquivo);
   }
 
-  // --- Carregamento original (preservado) mas reorganizado para limpar e adicionar KPIs extras
+  // --- Carregamento principal (preservado)
   useEffect(() => {
     async function carregarDashboard() {
       setLoading(true);
       try {
-        // Faz as leituras como antes
         const vendasT = await vendas.leitura();
-        setDados3(await vendas.leitura());
+        setDados3(vendasT);
         const stk = await stok.leitura();
         const mercT = await mercadoria.leitura();
 
-        // Mantive os cálculos e filtros que já tinhas
-        const totalVendas = vendasT.reduce((acc, venda) => acc + Number(venda.quantidade || 0), 0);
+        const totalVendas = vendasT.reduce(
+          (acc, venda) => acc + Number(venda.quantidade || 0),
+          0
+        );
         setQuant(totalVendas);
 
-        // cálculos das vendas com filtros por mês/stock (preservados)
-        let valorTotalVendas = 0;
-        let quantidadeTotal = 0;
-        let quantidadeTotal2 = 0;
-        let quantidadeDivida = 0;
+        // cálculos das vendas (com filtros mes/stock na tua lógica)
+        let valorTotalVendas = 0; // MT (pagas)
+        let quantidadeTotalPagas = 0; // kg
+        let quantidadeTotalDividaKg = 0; // kg em dívida
+        let valorTotalDividaMt = 0; // MT em dívida
+        let valorTotalVendasFiltradas = 0; // MT (todas as vendas conforme filtros)
 
         vendasT.forEach((e) => {
-          console.log(e)
           const dataVenda = new Date(e.data);
-          const anoMes = `${dataVenda.getFullYear()}-${String(dataVenda.getMonth() + 1).padStart(2, "0")}`;
+          const anoMes = `${dataVenda.getFullYear()}-${String(
+            dataVenda.getMonth() + 1
+          ).padStart(2, "0")}`;
 
-          e.mercadorias.forEach((o) => {
-            if ((!mesSelecionado || anoMes === mesSelecionado) && (!stockSelecionado || (stockSelecionado && stockSelecionado == o.stock.idstock))) {
+          e.mercadorias?.forEach((o) => {
+            const passaMes =
+              !mesSelecionado || anoMes === mesSelecionado;
+            const passaStock =
+              !stockSelecionado ||
+              Number(stockSelecionado) === Number(o.stock?.idstock);
+
+            if (passaMes && passaStock) {
+              // Total filtrado (saídas MT)
+              valorTotalVendasFiltradas += Number(e.valor_total || 0);
+
               if (e.status_p === "Em_Divida") {
-                e.itensVenda.forEach((item) => {
-                  quantidadeTotal2 += Number(item.quantidade|| 0);
-                  quantidadeDivida += Number(e.valor_total|| 0);
-                })
+                e.itensVenda?.forEach((item) => {
+                  quantidadeTotalDividaKg += Number(item.quantidade || 0);
+                  valorTotalDividaMt += Number(item.valor_total || 0);
+                });
               } else {
-         
-                e.itensVenda.forEach((item) => {
-                  quantidadeTotal +=Number(item.quantidade|| 0);
-          
-                  valorTotalVendas += Number(e.valor_total|| 0);
-              })
+                e.itensVenda?.forEach((item) => {
+                  quantidadeTotalPagas += Number(item.quantidade || 0);
+                  valorTotalVendas += Number(item.valor_total || 0);
+                });
               }
             }
           });
         });
 
-        setQuantiDivida(quantidadeDivida);
-        setTotal(quantidadeTotal);
-        setTotalDivida(quantidadeTotal2);
+        setQuantiDivida(valorTotalDividaMt);
+        setTotal(quantidadeTotalPagas);
+        setTotalDivida(quantidadeTotalDividaKg);
         setQuantidadeTotal(valorTotalVendas);
+        setSaida(valorTotalVendasFiltradas);
 
         setModelo2(stk);
 
-        // cards (preservando a intenção original)
-        let cards2 = [
-          await clientes.total(),
-          totalMerc.toFixed ? totalMerc.toFixed(2) : totalMerc,
-          total,
-          totalDivida,
-        ];
-        setCard(cards2);
-
         // cálculos de mercadorias (preservado)
-        let contador1 = 0;
-        let contador2 = 0;
-        let contador3 = 0;
-
+        let totalKg = 0; // total mercadorias (kg)
+        let totalEntradasMt = 0; // entradas em MT (valor_total somado)
         mercT.forEach((e) => {
           const dataMercadoria = new Date(e.data_entrada);
-          const anoMes = `${dataMercadoria.getFullYear()}-${String(dataMercadoria.getMonth() + 1).padStart(2, "0")}`;
+          const anoMes = `${dataMercadoria.getFullYear()}-${String(
+            dataMercadoria.getMonth() + 1
+          ).padStart(2, "0")}`;
 
-          if ((!mesSelecionado || anoMes === mesSelecionado) && (!stockSelecionado || (stockSelecionado && stockSelecionado == e.stock.idstock))) {
+          const passaMes =
+            !mesSelecionado || anoMes === mesSelecionado;
+          const passaStock =
+            !stockSelecionado ||
+            Number(stockSelecionado) === Number(e.stock?.idstock);
+
+          if (passaMes && passaStock) {
             if (e.tipo != null) {
-              contador1 += Number(e.stock.quantidade_estoque || 0);
-              contador3 += Number(e.quantidade || 0);
-            }
-            if (e.tipo != null) {
-              contador2 += Number(e.quantidade || 0);
-            
+              totalKg += Number(e.quantidade || 0);
+              totalEntradasMt += Number(e.valor_total || 0);
             }
           }
         });
 
-        setTotalMerc(contador2);
-        setEntradada(contador1.toFixed(2));
-        setSaida(contador3);
+        setTotalMerc(totalKg);
+        setEntradada(Number(totalEntradasMt || 0).toFixed(2));
+
+        // cards
+        const cards2 = [
+          await clientes.total(),
+          totalKg,
+          quantidadeTotalPagas,
+          quantidadeTotalDividaKg,
+        ];
+        setCard(cards2);
       } catch (error) {
         console.error("Erro ao carregar dashboard:", error);
       } finally {
@@ -316,9 +376,9 @@ export default function Dashboard() {
 
     carregarDashboard();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stockSelecionado, total, totalDivida, entrada, mesSelecionado]);
+  }, [stockSelecionado, mesSelecionado]);
 
-  // --- Prepara dados para gráficos e exportação (preservando tua lógica)
+  // --- Prepara dados para gráficos e exportação (preservado)
   useEffect(() => {
     if (cards.length > 0) {
       async function setGrafico() {
@@ -331,25 +391,47 @@ export default function Dashboard() {
 
         setDadosParaExportar({
           infoBasica: [
-            { label: "Total Clientes", valor: Number(cards[0]).toFixed(2).replace(".", ",") },
-            { label: "Total Vendas", valor: (Number(cards[3]) + Number(cards[2])).toFixed(2).replace(".", ",") },
-            { label: "Total Mercadorias", valor: Number(cards[1]).toFixed(2).replace(".", ",") },
-            { label: "Total Vendas Pagas", valor: Number(cards[2]).toFixed(2).replace(".", ",") },
-            { label: "Total Vendas Devidas", valor: Number(cards[3]).toFixed(2).replace(".", ",") },
-            { label: "Total Saídas", valor: Number(saida).toFixed(2).replace(".", ",") },
-            { label: "Total Entradas", valor: Number(entrada).toFixed(2).replace(".", ",") },
+            {
+              label: "Total Clientes",
+              valor: Number(cards[0]).toFixed(2).replace(".", ","),
+            },
+            {
+              label: "Total Vendas",
+              valor: (Number(cards[3]) + Number(cards[2]))
+                .toFixed(2)
+                .replace(".", ","),
+            },
+            {
+              label: "Total Mercadorias",
+              valor: Number(cards[1]).toFixed(2).replace(".", ","),
+            },
+            {
+              label: "Total Vendas Pagas (kg)",
+              valor: Number(cards[2]).toFixed(2).replace(".", ","),
+            },
+            {
+              label: "Total Vendas Devidas (kg)",
+              valor: Number(cards[3]).toFixed(2).replace(".", ","),
+            },
+            {
+              label: "Total Saídas (kg)",
+              valor: Number(total).toFixed(2).replace(".", ","),
+            },
+            {
+              label: "Total Entradas (kg)",
+              valor: Number(totalMerc).toFixed(2).replace(".", ","),
+            },
           ],
           grafico: dados,
           labels: labels,
         });
       }
-
       setGrafico();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards, entrada, saida]);
 
-  // --- Gráfico de barras padrão (vendas mensais) usando useData/useVenda (mantido)
+  // --- Gráfico de barras (preservado)
   useEffect(() => {
     if (!chartRef.current) return;
     if (!useData || useData.length === 0) return;
@@ -373,9 +455,7 @@ export default function Dashboard() {
       },
       options: {
         responsive: true,
-        plugins: {
-          legend: { position: "top" },
-        },
+        plugins: { legend: { position: "top" } },
         scales: {
           x: { ticks: { maxTicksLimit: 10 } },
           y: {
@@ -388,39 +468,47 @@ export default function Dashboard() {
         },
       },
     });
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useVenda, useData]);
 
-  // --- Gráfico combinado: Entradas vs Saídas por mês (novo, mas usando os mesmos dados)
+  // --- Gráfico combinado (preservado)
   useEffect(() => {
     async function montarGraficoCombinado() {
       const vendasDados = await vendas.leitura();
       const mercDados = await mercadoria.leitura();
 
-      // Agrupar por mês para ambos
       const mapVendas = {};
       vendasDados.forEach((v) => {
         const d = new Date(v.data);
-        const chave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        mapVendas[chave] = (mapVendas[chave] || 0) + Number(v.valor_total || 0);
+        const chave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+          2,
+          "0"
+        )}`;
+        mapVendas[chave] =
+          (mapVendas[chave] || 0) + Number(v.valor_total || 0);
       });
 
       const mapEntradas = {};
       mercDados.forEach((m) => {
         const d = new Date(m.data_entrada);
-        const chave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        mapEntradas[chave] = (mapEntradas[chave] || 0) + Number(m.stock.quantidade_estoque || 0);
+        const chave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+          2,
+          "0"
+        )}`;
+        mapEntradas[chave] =
+          (mapEntradas[chave] || 0) +
+          Number(m.stock?.quantidade_estoque || 0);
       });
 
-      // merge labels
-      const labelsSet = new Set([...Object.keys(mapVendas), ...Object.keys(mapEntradas)]);
+      const labelsSet = new Set([
+        ...Object.keys(mapVendas),
+        ...Object.keys(mapEntradas),
+      ]);
       const labelsArr = Array.from(labelsSet).sort();
 
       const vendasVals = labelsArr.map((l) => mapVendas[l] || 0);
       const entradasVals = labelsArr.map((l) => mapEntradas[l] || 0);
 
-      // desenha gráfico combinado
       if (!mixedChartRef.current) return;
       const ctx = mixedChartRef.current.getContext("2d");
       if (mixedChartInstanceRef.current) mixedChartInstanceRef.current.destroy();
@@ -470,7 +558,7 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mesSelecionado, stockSelecionado]);
 
-  // --- Gráfico de pizza: Distribuição por stock (mantendo dados)
+  // --- Pie: Distribuição por stock (preservado)
   useEffect(() => {
     async function montarPie() {
       const mercDados = await mercadoria.leitura();
@@ -511,30 +599,35 @@ export default function Dashboard() {
     montarPie();
   }, [mesSelecionado, stockSelecionado]);
 
-  // --- Ranking de mercadorias mais vendidas (novo)
+  // --- Ranking (preservado)
   const [ranking, setRanking] = useState([]);
   useEffect(() => {
     async function gerarRanking() {
       const vendasDados = await vendas.leitura();
       const mapa = {};
       vendasDados.forEach((v) => {
-        v.mercadorias.forEach((m) => {
+        v.mercadorias?.forEach((m) => {
           mapa[m.nome] = (mapa[m.nome] || 0) + Number(m.quantidade || 0);
         });
       });
       const arr = Object.entries(mapa).map(([nome, qtd]) => ({ nome, qtd }));
       arr.sort((a, b) => b.qtd - a.qtd);
-      setRanking(arr.slice(0, 8)); // top 8
+      setRanking(arr.slice(0, 8));
     }
     gerarRanking();
   }, [mesSelecionado, stockSelecionado]);
 
-  // --- Helper: Formatação simples
+  // --- Helper: Formatação
   const formatNumber = (n) => {
     if (n == null) return "0";
     if (Number.isFinite(Number(n))) return Number(n).toLocaleString();
     return n;
   };
+
+  // --- Valores do Resumo Financeiro
+  const entradasMT = Number(String(entrada).replace(",", ".")) || 0;
+  const saidasMT = Number(saida || 0) || 0;
+  const diferenca = entradasMT - saidasMT;
 
   // --- Render
   return (
@@ -545,13 +638,13 @@ export default function Dashboard() {
         <Content>
           {loading && <Loading />}
 
-          <div style={{ display: "grid", gap: 12, alignItems: "center", marginBottom: 12 }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontWeight: 600 }}>Filtrar por stock:</label>
+          {/* Barra de Filtros */}
+          <div className="filters-bar">
+            <div className="filter-item">
+              <label>Filtrar por Gaiola</label>
               <select
                 value={stockSelecionado}
                 onChange={(e) => setLoteS(e.target.value)}
-                style={{ width: "100%", padding: 8, borderRadius: 8 }}
               >
                 <option value={0}>Todas Gaiolas</option>
                 {modelo2.map((stock) => (
@@ -562,63 +655,82 @@ export default function Dashboard() {
               </select>
             </div>
 
-            <div className="d-grid">
-              <label style={{ fontWeight: 600 }}>Filtrar por Mês:</label>
+            <div className="filter-item">
+              <label>Filtrar por Mês</label>
               <input
                 type="month"
                 value={mesSelecionado}
                 onChange={(e) => setMesSelecionado(e.target.value)}
-                style={{ padding: 8, borderRadius: 8 }}
               />
             </div>
 
-            <div style={{ display: "flex", gap: 8, alignItems: "center",justifyContent:"center"
-             }}>
+            <div className="filter-actions">
               <button
                 className="btn-export"
-                onClick={() => exportarParaExcel(dadosParaExportar, "dashboard_dados.xlsx")}
+                onClick={() =>
+                  exportarParaExcel(dadosParaExportar, "dashboard_dados.xlsx")
+                }
+                title="Exportar dados da dashboard para Excel"
               >
                 📥 Exportar Excel
               </button>
             </div>
           </div>
 
-          {/* --- KPI CARDS (estilo Power BI) */}
+          {/* KPI CARDS */}
           <div className="cards-grid">
-            <KpiCard title="Total Clientes" value={formatNumber(cards[0] || 0)} icon={<Users />} color="#4fc3f7" />
+            <KpiCard
+              title="Total Clientes"
+              value={formatNumber(cards[0] || 0)}
+              icon={<Users />}
+              color="#0b74de1a"
+              iconTint="#0b74de"
+            />
             <KpiCard
               title="Vendas Pagas"
-              value={`${Number(total.toFixed(2)|| 0)} `}
+              value={`${Number(total || 0).toFixed(2)} Kg`}
               icon={<TrendingUp />}
-              color="#66bb6a"
+              color="#1b5e201a"
+              iconTint="#1b5e20"
             />
             <KpiCard
               title="Vendas em Dívida"
-              value={`${formatNumber(totalDivida.toFixed(2) || 0)} `}
+              value={`${Number(totalDivida || 0).toFixed(2)} Kg`}
               icon={<TrendingDown />}
-              color="#ef5350"
+              color="#c628281a"
+              iconTint="#c62828"
             />
             <KpiCard
               title="Total Mercadorias"
-              value={`${formatNumber(cards[1] || 0)} `}
+              value={`${Number(cards[1] || 0).toFixed(2)} Kg`}
               icon={<Box />}
-              color="#ffa726"
+              color="#ef6c001a"
+              iconTint="#ef6c00"
             />
             <KpiCard
               title="Total Entradas"
-              value={`${formatNumber(entrada || 0)} `}
+              value={`${formatNumber(entrada || 0)} Mt`}
               icon={<List />}
-              color="#42a5f5"
+              color="#1976d21a"
+              iconTint="#1976d2"
             />
             <KpiCard
               title="Total Saídas"
-              value={`${saida.toFixed(2)} `}
+              value={`${formatNumber(saida)} Mt`}
               icon={<DollarSign />}
-              color="#7e57c2"
+              color="#673ab71a"
+              iconTint="#673ab7"
+            />
+
+            {/* NOVO: Resumo Financeiro */}
+            <ResumoFinanceiroCard
+              entradas={entradasMT}
+              saidas={saidasMT}
+              diferenca={diferenca}
             />
           </div>
 
-          {/* --- Charts Row */}
+          {/* Charts */}
           <div className="charts-row">
             <div className="chart-card">
               <h4>Vendas Mensais</h4>
@@ -641,7 +753,8 @@ export default function Dashboard() {
                 <ol className="ranking-list">
                   {ranking.map((r, idx) => (
                     <li key={r.nome}>
-                      <strong>{idx + 1}.</strong> {r.nome} — <em>{formatNumber(r.qtd)} kg</em>
+                      <strong>{idx + 1}.</strong> {r.nome} —{" "}
+                      <em>{formatNumber(r.qtd)} kg</em>
                     </li>
                   ))}
                   {ranking.length === 0 && <li>Nenhuma venda registada</li>}
@@ -650,18 +763,18 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* --- Tabela Resumo de Mercadorias (filtrável) */}
+          {/* Tabela Resumo (filtrável) */}
           <div className="table-card">
             <h3>Resumo de Entradas (filtrado)</h3>
-            <ResumoTabela mercadorias={Dados2} mesSelecionado={mesSelecionado} stockSelecionado={stockSelecionado} />
+            <ResumoTabela
+              mercadorias={Dados2}
+              mesSelecionado={mesSelecionado}
+              stockSelecionado={stockSelecionado}
+            />
           </div>
         </Content>
       </Conteinner>
       <Footer />
-      {/* --- CSS local abaixo */}
-      <style>{`
-       
-      `}</style>
     </>
   );
 }
@@ -670,10 +783,10 @@ export default function Dashboard() {
    Componentes auxiliares
    ------------------------- */
 
-function KpiCard({ title, value, icon, color }) {
+function KpiCard({ title, value, icon, color, iconTint }) {
   return (
-    <div className="kpi-card">
-      <div className="kpi-icon" style={{ background: color }}>
+    <div className="kpi-card" style={{ background: "#fff" }}>
+      <div className="kpi-icon" style={{ background: color, color: iconTint }}>
         {icon}
       </div>
       <div className="kpi-text">
@@ -684,37 +797,86 @@ function KpiCard({ title, value, icon, color }) {
   );
 }
 
+function ResumoFinanceiroCard({ entradas = 0, saidas = 0, diferenca = 0 }) {
+  const positivo = Number(diferenca) >= 0;
+  return (
+    <div className="finance-card">
+      <div className="finance-head">
+        <div className="finance-icon">
+          <DollarSign size={22} />
+        </div>
+        <div>
+          <h3>Resumo Financeiro</h3>
+          <span className="finance-sub">Consolidação por filtros activos</span>
+        </div>
+      </div>
+      <div className="finance-grid">
+        <div className="finance-item">
+          <span>Entradas</span>
+          <strong>{entradas.toLocaleString()} Mt</strong>
+        </div>
+        <div className="finance-item">
+          <span>Saídas</span>
+          <strong>{saidas.toLocaleString()} Mt</strong>
+        </div>
+        <div className={`finance-item ${positivo ? "positivo" : "negativo"}`}>
+          <span>Diferença</span>
+          <strong>
+            {positivo ? "+" : "-"}
+            {Math.abs(diferenca).toLocaleString()} Mt
+          </strong>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ResumoTabela({ mercadorias = [], mesSelecionado, stockSelecionado }) {
-  const filtradas = mercadorias
+  const filtradas = (mercadorias || [])
     .filter((m) => {
       if (!m) return false;
       const d = new Date(m.data_entrada);
       if (isNaN(d)) return false;
-      const anoMes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const anoMes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}`;
       if (mesSelecionado && anoMes !== mesSelecionado) return false;
-      if (stockSelecionado && stockSelecionado != 0 && m.stock && m.stock.idstock != stockSelecionado) return false;
+      if (
+        stockSelecionado &&
+        Number(stockSelecionado) !== 0 &&
+        m.stock &&
+        Number(m.stock.idstock) !== Number(stockSelecionado)
+      )
+        return false;
       return true;
     })
-    .slice(0, 200); // limita a 200 linhas para performance
+    .slice(0, 200);
 
-  const totalQuantidadeEst = filtradas.reduce((acc, m) => acc + Number(m.quantidade_est || 0), 0);
-  const totalQuantidadeDisp = filtradas.reduce((acc, m) => acc + Number(m.quantidade || 0), 0);
+  const totalQuantidadeEst = filtradas.reduce(
+    (acc, m) => acc + Number(m.quantidade_est || 0),
+    0
+  );
+  const totalQuantidadeDisp = filtradas.reduce(
+    (acc, m) => acc + Number(m.quantidade || 0),
+    0
+  );
 
   return (
     <div>
-      <div style={{ marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div className="table-meta">
         <small>Registos: {filtradas.length}</small>
-        <div>
-          <small style={{ marginRight: 12 }}>Total Entradas: {totalQuantidadeEst.toFixed(2)}</small>
+        <div className="table-totals">
+          <small>Total Entradas: {totalQuantidadeEst.toFixed(2)}</small>
           <small>Total Disponível: {totalQuantidadeDisp.toFixed(2)}</small>
         </div>
       </div>
 
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div className="table-wrap">
+        <table className="table">
           <thead>
-            <tr style={{ textAlign: "left", borderBottom: "1px solid #eee" }}>
-              <th style={{ padding: 8 }}>ID</th>
+            <tr>
+              <th>ID</th>
               <th>Nome</th>
               <th>Quantidade Est.</th>
               <th>Disponível</th>
@@ -725,8 +887,8 @@ function ResumoTabela({ mercadorias = [], mesSelecionado, stockSelecionado }) {
           </thead>
           <tbody>
             {filtradas.map((m) => (
-              <tr key={m.idmercadoria} style={{ borderBottom: "1px solid #fafafa" }}>
-                <td style={{ padding: 8 }}>{m.idmercadoria}</td>
+              <tr key={m.idmercadoria}>
+                <td>{m.idmercadoria}</td>
                 <td>{m.nome}</td>
                 <td>{Number(m.quantidade_est || 0).toFixed(2)}</td>
                 <td>{Number(m.quantidade || 0).toFixed(2)}</td>
@@ -737,7 +899,7 @@ function ResumoTabela({ mercadorias = [], mesSelecionado, stockSelecionado }) {
             ))}
             {filtradas.length === 0 && (
               <tr>
-                <td colSpan={7} style={{ padding: 12, textAlign: "center" }}>
+                <td colSpan={7} className="td-center">
                   Nenhum registo encontrado
                 </td>
               </tr>

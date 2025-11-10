@@ -1,0 +1,332 @@
+/* ======= ESTILO EMPRESARIAL PREMIUM - VENDAS VIEW ======= */
+
+:root {
+    --bg: #f5f6f8;
+    --card-bg: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --primary: #1371b4;
+    --primary-light: #e8f3fc;
+    --success: #1b5e20;
+    --danger: #c62828;
+    --warning: #ef6c00;
+    --shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Fundo e base tipográfica */
+  .content {
+    background: var(--bg);
+    padding: 20px;
+    font-family: "Inter", "Roboto", sans-serif;
+    color: var(--text);
+  }
+  
+  /* ======= LINK DE VOLTAR ======= */
+  .back_link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 20px;
+    text-decoration: none;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+  .back_link:hover {
+    color: #0c5688;
+    transform: translateX(-4px);
+  }
+  .back {
+    font-size: 20px;
+  }
+  
+  /* ======= FILTROS ======= */
+  label {
+    font-weight: 600;
+    font-size: 13px;
+    color: #374151;
+    display: block;
+    margin-bottom: 6px;
+  }
+  
+  select,
+  input[type="month"] {
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: white;
+    font-size: 14px;
+    width: 260px;
+    margin-bottom: 16px;
+    transition: all 0.25s ease;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+  select:hover,
+  input[type="month"]:hover {
+    border-color: var(--primary);
+  }
+  select:focus,
+  input[type="month"]:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(19, 113, 180, 0.15);
+  }
+  
+  /* ======= BOTÕES ======= */
+  button,
+  .btn {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 9px 16px;
+    transition: all 0.25s ease;
+    box-shadow: var(--shadow);
+  }
+  
+  .btn-success {
+    background: linear-gradient(180deg, #2e7d32 0%, #1b5e20 100%);
+    color: white;
+  }
+  .btn-success:hover {
+    transform: translateY(-2px);
+    opacity: 0.95;
+  }
+  
+  .btn-primary {
+    background: linear-gradient(180deg, #1371b4 0%, #0b4f7d 100%);
+    color: white;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    opacity: 0.95;
+  }
+  
+  .btn-export {
+    background: linear-gradient(180deg, #0b74de 0%, #064d91 100%);
+    color: white;
+    font-weight: 600;
+    padding: 10px 18px;
+    margin-top: 16px;
+  }
+  .btn-export:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+  }
+  
+  /* Status com cores */
+  .bg-success {
+    background-color: #c8e6c9;
+    color: #1b5e20;
+    border-radius: 6px;
+    font-weight: 700;
+    padding: 4px 8px;
+  }
+  .bg-danger {
+    background-color: #ffcdd2;
+    color: #b71c1c;
+    border-radius: 6px;
+    font-weight: 700;
+    padding: 4px 8px;
+  }
+  .bg-warning {
+    background-color: #ffe0b2;
+    color: #ef6c00;
+    border-radius: 6px;
+    font-weight: 700;
+    padding: 4px 8px;
+  }
+  
+  /* ======= TABELA ======= */
+  .tabela {
+    margin-top: 20px;
+    background: var(--card-bg);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 20px;
+    overflow-x: auto;
+    position: relative;
+  }
+  
+  /* faixa colorida topo tabela */
+  .tabela::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 5px;
+    width: 100%;
+    background: linear-gradient(90deg, #1371b4 0%, #0b4f7d 100%);
+    border-radius: 14px 14px 0 0;
+  }
+  
+  .tabela table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 850px;
+  }
+  
+  .tabela th {
+    text-align: left;
+    background: #f8fafc;
+    color: #374151;
+    font-weight: 700;
+    padding: 10px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13.5px;
+  }
+  .tabela td {
+    padding: 10px;
+    color: var(--text);
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+  }
+  
+  .tabela tr:hover {
+    background: #f1faff;
+    transition: background 0.2s ease;
+  }
+  
+  /* Totais */
+  tfoot td {
+    background: #f8fafc;
+    font-weight: 700;
+    padding: 10px;
+    color: var(--text);
+    border-top: 2px solid var(--line);
+  }
+  
+  /* ======= MODAL ======= */
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1200;
+  }
+  
+  .modal-content {
+    background: white;
+    border-radius: 14px;
+    padding: 24px 26px;
+    width: 320px;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    animation: fadeIn 0.25s ease;
+    border-top: 4px solid var(--primary);
+  }
+  
+  .modal-content p {
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 18px;
+  }
+  
+  .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+  }
+  
+  .sim {
+    background: linear-gradient(180deg, #1b5e20 0%, #2e7d32 100%);
+    color: white;
+    padding: 8px 18px;
+  }
+  .nao {
+    background: linear-gradient(180deg, #c62828 0%, #b71c1c 100%);
+    color: white;
+    padding: 8px 18px;
+  }
+  .sim:hover,
+  .nao:hover {
+    opacity: 0.9;
+  }
+  
+  /* ======= CRUD ======= */
+  .crud {
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .crudid {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px;
+    width: 100px;
+    font-size: 13px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    outline: none;
+  }
+  
+  .apagar {
+    background: linear-gradient(180deg, #c62828 0%, #b71c1c 100%);
+    color: white;
+  }
+  .apagar:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+  }
+  
+  .editar {
+    background: linear-gradient(180deg, #2e7d32 0%, #1b5e20 100%);
+    color: white;
+  }
+  .editar:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+  }
+  
+  /* ======= RESPONSIVIDADE ======= */
+  @media (max-width: 960px) {
+    .tabela table {
+      min-width: 700px;
+    }
+    select,
+    input[type="month"] {
+      width: 100%;
+    }
+  }
+  
+  @media (max-width: 720px) {
+    .tabela {
+      padding: 14px;
+    }
+    .tabela table {
+      min-width: 600px;
+    }
+    label {
+      font-size: 12px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .tabela {
+      padding: 10px;
+    }
+    .tabela table {
+      min-width: 500px;
+      font-size: 12px;
+    }
+  }
+  
+  /* ======= ANIMAÇÕES ======= */
+  @keyframes fadeIn {
+    from {
+      transform: scale(0.95);
+      opacity: 0.7;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  

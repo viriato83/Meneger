@@ -15,7 +15,7 @@ import ClienteRepository from "../Clientes/ClienteRepository";
 import repositorioStock from "../Stock.js/Repositorio";
 import repositorioMercadoria from "../Mercadorias/Repositorio";
 
-
+import "./VendasView.css"
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { IoMdArrowRoundBack, IoMdPrint } from "react-icons/io";

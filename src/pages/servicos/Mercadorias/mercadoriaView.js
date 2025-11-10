@@ -9,103 +9,131 @@ import Mensagem from "../../../components/mensagem";
 import Footer from "../../../components/Footer";
 import RepositorioMercadoria from "./Repositorio";
 import Loading from "../../../components/loading";
-import * as XLSX from "xlsx";  // Import the xlsx library
+import * as XLSX from "xlsx";
 import { repositorioVenda } from "../vendas/vendasRepositorio";
 import repositorioStock from "../Stock.js/Repositorio";
 
 export default function MercadoriaView() {
   const repositorio = new RepositorioMercadoria();
-  const repositoriovenda= new repositorioVenda()
+  const repositoriovenda = new repositorioVenda();
   const [modelo, setModelo] = useState([]);
   const [total, setTotal] = useState(0);
-  const [id, setId] = useState(""); // Estado para o ID 
+  const [id, setId] = useState("");
   const [dataInicio, setDataInicio] = useState("");
-const [dataFim, setDataFim] = useState("");
+  const [dataFim, setDataFim] = useState("");
+  const [quantidadeEst, setQuantidadeEst] = useState(0);
+  const [valorEntradas, setValorEntradas] = useState(0);
+  const [valorDisponivel, setValorDisponivel] = useState(0);
+  const [stockSelecionado, setLoteS] = useState(0);
+  const [modelo2, setModelo2] = useState([]);
 
   const navigate = useNavigate();
-const permissao= sessionStorage.getItem("cargo");
-  const [loading, setLoading] = useState(false); // Estado para exibir o loading
-  const msg = useRef(null); // UseRef para manter uma instância estável
+  const permissao = sessionStorage.getItem("cargo");
+  const [loading, setLoading] = useState(false);
+  const msg = useRef(null);
   const moda = useRef(null);
-  const [quantidadeTotal, setQuantidadeTotal] = useState(0);
-  const [stockSelecionado,setLoteS] = useState(0)
-  const [qSaidas, setQSaidas] = useState(0);
-  const [modelo2, setModelo2] = useState([]);
-  const [quantidadeEst, setQuantidadeEst] = useState(0);
-  const repoStco= new repositorioStock();
+  const repoStco = new repositorioStock();
+
   useEffect(() => {
-    // Inicializa as instâncias uma vez
     msg.current = new Mensagem();
     moda.current = new Modal();
 
     async function carregarDados() {
-      setLoading(true); // Exibir loading
+      setLoading(true);
       try {
         const repoStck = await repoStco.leitura();
         const dadosModelo = await repositorio.leitura();
-        const dadosVendas= await repositoriovenda.leitura();
-       let valorTotalVendas=0;
-       let  quantidadeTotal=0;
-       let  quantidadeEst=0;
-        dadosModelo.forEach((e) => {
-    
-                if (!stockSelecionado|| (stockSelecionado && stockSelecionado == e.stock.idstock)) {
-                  quantidadeEst+=e.quantidade_est;
-                  quantidadeTotal += e.quantidade;
-                  valorTotalVendas += e.valor_total;
-                  }
-          
-            
 
+        // 🔹 Filtragem por gaiola e datas
+        const filtradas = dadosModelo.filter(
+          (e) =>
+            (!stockSelecionado || e.stock.idstock == stockSelecionado) &&
+            (!dataInicio || new Date(e.data_entrada) >= new Date(dataInicio)) &&
+            (!dataFim || new Date(e.data_entrada) <= new Date(dataFim))
+        );
+
+        // 🔹 Cálculos gerais
+        let totalQtd = 0;
+        let totalQtdEst = 0;
+        let totalValorEntradas = 0;
+        let totalValorDisponivel = 0;
+
+        filtradas.forEach((e) => {
+          totalQtd += e.quantidade || 0;
+          totalQtdEst += e.quantidade_est || 0;
+          totalValorEntradas += e.valor_total || 0;
+          totalValorDisponivel += (e.quantidade_est || 0) * (e.valor_un || 0);
         });
-       
-        const quantidadeTotalVendas = dadosModelo.reduce((acc, merc) => 
-          acc + merc.valor_total, 0);
-        setQuantidadeEst(quantidadeEst)
+
         setModelo(dadosModelo);
-        setTotal(quantidadeTotal);
-        setQuantidadeTotal(valorTotalVendas);
-        setModelo2(repoStck)
+        setTotal(totalQtd);
+        setQuantidadeEst(totalQtdEst);
+        setValorEntradas(totalValorEntradas);
+        setValorDisponivel(totalValorDisponivel);
+        setModelo2(repoStck);
       } catch (erro) {
         console.error("Erro ao carregar dados:", erro);
       } finally {
-        setLoading(false); // Esconder loading
+        setLoading(false);
       }
     }
-    carregarDados();
-  }, [stockSelecionado]);
 
-  // Função para exportar os dados para Excel
+    carregarDados();
+  }, [stockSelecionado, dataInicio, dataFim]);
+
+  // =====================================================
+  // 🧾 EXPORTAR PARA EXCEL (organizado e completo)
+  // =====================================================
   const exportToExcel = () => {
-    const dados = modelo.map((elemento) => ({
-      ID: elemento.idmercadoria,
-      Nome: elemento.nome,
-      Tipo: elemento.tipo,
-      Quantidade: elemento.quantidade,
-      "Data de Entrada": elemento.data_entrada,
-      "Valor Unitário": `${elemento.valor_un} Mt`,
-      "Valor Total": elemento.valor_total.toLocaleString("pt-PT", { minimumFractionDigits: 3 }) + " Mt",
-      "Q Saídas": elemento.q_saidas,
-      "Data de Saída": elemento.data_saida,
+    // 🔹 Filtra os dados conforme os filtros aplicados
+    const filtradas = modelo.filter(
+      (e) =>
+        (!stockSelecionado || e.stock.idstock == stockSelecionado) &&
+        (!dataInicio || new Date(e.data_entrada) >= new Date(dataInicio)) &&
+        (!dataFim || new Date(e.data_entrada) <= new Date(dataFim))
+    );
+
+    // 🔹 Estrutura dos dados a exportar
+    const dados = filtradas.map((e) => ({
+      ID: e.idmercadoria,
+      Nome: e.nome,
+      Tipo: e.tipo,
+      "Quantidade Total (kg)": e.quantidade.toFixed(2),
+      "Disponível (kg)": e.quantidade_est.toFixed(2),
+      "Saída (kg)": (e.quantidade - e.quantidade_est).toFixed(2),
+      "Valor Unitário (Mt)": e.valor_un.toFixed(2),
+      "Valor Total (Mt)": e.valor_total.toLocaleString("pt-PT", {
+        minimumFractionDigits: 2,
+      }),
+      "Data de Entrada": e.data_entrada,
+      "Gaiola": e.stock ? e.stock.tipo : "-",
+      "Usuário": e.usuario ? e.usuario.login : "-",
     }));
 
+    // 🔹 Linha de resumo no final
     dados.push({
-      ID: "TOTAL",
+      ID: "",
       Nome: "",
-      Tipo: "",
-      Quantidade: total,
+      Tipo: "TOTAIS:",
+      "Quantidade Total (kg)": total.toFixed(2),
+      "Disponível (kg)": quantidadeEst.toFixed(2),
+      "Saída (kg)": (total - quantidadeEst).toFixed(2),
+      "Valor Unitário (Mt)": "",
+      "Valor Total (Mt)": valorEntradas.toLocaleString("pt-PT", {
+        minimumFractionDigits: 2,
+      }),
       "Data de Entrada": "",
-      "Valor Unitário": "",
-      "Valor Total": quantidadeTotal.toLocaleString("pt-PT", { minimumFractionDigits: 3 }) + " Mt",
-      "Q Saídas": "",
-      "Data de Saída": "",
+      "Gaiola": "",
+      "Usuário": "",
     });
 
+    // 🔹 Gera planilha Excel
     const ws = XLSX.utils.json_to_sheet(dados);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Mercadorias");
-    XLSX.writeFile(wb, "mercadorias.xlsx");
+    XLSX.writeFile(wb, "Relatorio_Mercadorias.xlsx");
   };
+  // =====================================================
 
   return (
     <>
@@ -114,32 +142,41 @@ const permissao= sessionStorage.getItem("cargo");
       <Conteinner>
         <Slider />
         <Content>
-          
-          <h2 >Mercadorias </h2>
-          <label>    Filtrar por Gaiola:</label>
-          <select value={stockSelecionado} onChange={(e) => setLoteS(Number(e.target.value))}>
-          <option>Selecione Uma Gaiola</option>
-            {modelo2.map((stock) => (
-              <option key={stock.idstock} value={stock.idstock}>
-                Gaiola {stock.tipo}
-              </option>
-            ))}
-          </select>
-          <label>Filtrar por Data:</label>
-<div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-  <input
-    type="date"
-    value={dataInicio}
-    onChange={(e) => setDataInicio(e.target.value)}
-  />
-  <span>até</span>
-  <input
-    type="date"
-    value={dataFim}
-    onChange={(e) => setDataFim(e.target.value)}
-  />
-</div>
+          <h2>📦 Mercadorias</h2>
 
+          {/* 🔹 Filtros */}
+          <div style={{ marginBottom: "15px" }}>
+            <label>Filtrar por Gaiola:</label>
+            <select
+              value={stockSelecionado}
+              onChange={(e) => setLoteS(Number(e.target.value))}
+            >
+              <option value={0}>Todas as Gaiolas</option>
+              {modelo2.map((stock) => (
+                <option key={stock.idstock} value={stock.idstock}>
+                  Gaiola {stock.tipo}
+                </option>
+              ))}
+            </select>
+
+            <br />
+            <label>Filtrar por Data:</label>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <input
+                type="date"
+                value={dataInicio}
+                onChange={(e) => setDataInicio(e.target.value)}
+              />
+              <span>até</span>
+              <input
+                type="date"
+                value={dataFim}
+                onChange={(e) => setDataFim(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* 🔹 Tabela */}
           <div className="tabela">
             <table>
               <thead>
@@ -147,120 +184,101 @@ const permissao= sessionStorage.getItem("cargo");
                   <th>ID</th>
                   <th>Nome</th>
                   <th>Tipo</th>
-                  <th>Quantidade</th>
-                  <th>Quantidade Disponivel (kg)</th>
+                  <th>Entrada (kg)</th>
+                  <th>Disponível (kg)</th>
+                  <th>Saída (kg)</th>
+                  <th>Valor Unitário (Mt)</th>
+                  <th>Valor Total (Mt)</th>
                   <th>Data de Entrada</th>
-                  <th>Valor unitário</th>
-                  <th>Valor total</th>
-                  {/* <th>Q Saidas</th> */}
-                  <th>Data de Saída</th>
                   <th>Gaiola</th>
-                  {(permissao === "admin" )&&
-                          <th> Usuario</th>
-                          }
+                  {permissao === "admin" && <th>Usuário</th>}
                 </tr>
               </thead>
+
               <tbody>
-              {modelo.map((elemento, i) => {
-                console.log(elemento)
-                if (
-                  (!stockSelecionado || elemento.stock.idstock == stockSelecionado) &&
-                  (!dataInicio || new Date(elemento.data_entrada) >= new Date(dataInicio)) &&
-                  (!dataFim || new Date(elemento.data_entrada) <= new Date(dataFim))
-                ) {
-                      return (
-                        <tr key={i}>
-                          <td>{elemento.idmercadoria}</td>
-                          <td>{elemento.nome}</td>
-                          <td>{elemento.tipo}</td>
-                          <td>{elemento.quantidade_est.toFixed(2)}</td>
-                          <td>{elemento.quantidade.toFixed(2)}</td>
-                          <td>{elemento.data_entrada}</td>
-                          <td>{elemento.valor_un} Mt</td>
-                          <td>
-                            {elemento.valor_total.toLocaleString("pt-PT", {
-                              minimumFractionDigits: 3,
-                            })}{" "}
-                            Mt
-                          </td>
-                          {/* <td>{elemento.q_saidas}</td> */}
-                          <td>{elemento.data_saida}</td>
-                          <td>{elemento.stock.idstock} : {elemento.stock.tipo}</td>
-                            {(permissao === "admin" )&&
-                            <td>{elemento.usuario!=null?elemento.usuario.login:0}</td>
-                            }
-                        </tr>
-                      );
-                    } else {
-                      return null; // Ignora se não corresponder ao filtro
-                    }
-                  })}
-
+                {modelo.map((e, i) => {
+                  if (
+                    (!stockSelecionado || e.stock.idstock == stockSelecionado) &&
+                    (!dataInicio ||
+                      new Date(e.data_entrada) >= new Date(dataInicio)) &&
+                    (!dataFim ||
+                      new Date(e.data_entrada) <= new Date(dataFim))
+                  ) {
+                    return (
+                      <tr key={i}>
+                        <td>{e.idmercadoria}</td>
+                        <td>{e.nome}</td>
+                        <td>{e.tipo}</td>
+                        <td>{e.quantidade.toFixed(2)}</td>
+                        <td>{e.quantidade_est.toFixed(2)}</td>
+                        <td>{(e.quantidade - e.quantidade_est).toFixed(2)}</td>
+                        <td>{e.valor_un.toFixed(2)} Mt</td>
+                        <td>
+                          {e.valor_total.toLocaleString("pt-PT", {
+                            minimumFractionDigits: 2,
+                          })}{" "}
+                          Mt
+                        </td>
+                        <td>{e.data_entrada}</td>
+                        <td>
+                          {e.stock.idstock}: {e.stock.tipo}
+                        </td>
+                        {permissao === "admin" && (
+                          <td>{e.usuario ? e.usuario.login : "-"}</td>
+                        )}
+                      </tr>
+                    );
+                  } else return null;
+                })}
               </tbody>
-              <tfoot>
-                <tr>
-                  <td colSpan="4">Total</td>
-                  <td>{quantidadeEst.toFixed(2)} kg </td>
 
-                  <td>{total.toFixed(2)} kg   Disponiveis</td>
+              {/* 🔹 Rodapé com totais */}
+              <tfoot>
+                <tr style={{ fontWeight: "bold" }}>
+                  <td colSpan="3">Totais</td>
+                  <td>{total.toFixed(2)} kg Entradas</td>
+                  <td>{quantidadeEst.toFixed(2)} kg Disponíveis</td>
+                  <td>{(total - quantidadeEst).toFixed(2)} kg Saídas</td>
+                  <td></td>
+                  <td>
+                    <span style={{ color: "#006400" }}>
+                      Entradas:{" "}
+                      {valorEntradas.toLocaleString("pt-PT", {
+                        minimumFractionDigits: 2,
+                      })}{" "}
+                      Mt
+                    </span>
+                    <br />
+                    <span style={{ color: "blue" }}>
+                      Disponível:{" "}
+                      {valorDisponivel.toLocaleString("pt-PT", {
+                        minimumFractionDigits: 2,
+                      })}{" "}
+                      Mt
+                    </span>
+                  </td>
                 </tr>
               </tfoot>
             </table>
-            {(permissao === "admin" || permissao === "gerente") && ( 
-            <div className="crud">
+
+            {/* 🔹 Botão Excel */}
+            {permissao === "admin" && (
               <button
-                className="editar"
-                onClick={() => {
-                  if (id) {
-                    moda.current.Abrir("Deseja editar o " + id);
-                    document.querySelector(".sim").addEventListener("click", () => {
-                      navigate(`/registar-mercadoria/${id}`);
-                    });
-                    document.querySelector(".nao").addEventListener("click", () => {
-                      moda.current.fechar();
-                    });
-                  } else {
-                    msg.current.Erro("Por favor, digite um ID válido!");
-                  }
-                }}
-              >
-                Editar
-              </button>
-              <input
-                type="number"
-                className="crudid"
-                placeholder="Digite o ID"
-                value={id}
-                onChange={(e) => setId(e.target.value)} // Atualiza o estado com o valor digitado
-              />
-              <button
-                onClick={() => {
-                  if (id) {
-                    moda.current.Abrir("Deseja apagar o " + id);
-                    document.querySelector(".sim").addEventListener("click", () => {
-                      repositorio.deletar(id);
-                      moda.current.fechar();
-                    });
-                    document.querySelector(".nao").addEventListener("click", () => {
-                      moda.current.fechar();
-                    });
-                  } else {
-                    msg.current.Erro("Por favor, digite um ID válido!");
-                  }
-                }}
-                className="apagar"
-              >
-                Apagar
-              </button>
-              {/* Botão para exportar para Excel */}
-            </div>
-            )}
-            {permissao==="admin" &&(  <button
                 onClick={exportToExcel}
                 className="btn-export"
+                style={{
+                  marginTop: "15px",
+                  backgroundColor: "#007BFF",
+                  color: "#fff",
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "none",
+                  cursor: "pointer",
+                }}
               >
-                Exportar para Excel
-              </button>)}
+                📤 Exportar para Excel
+              </button>
+            )}
           </div>
         </Content>
       </Conteinner>
