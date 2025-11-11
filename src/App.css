@@ -597,6 +597,7 @@ tfoot td {
 
 /* sideBar */
 /* ======= SIDEBAR EMPRESARIAL RESPONSIVA - AQUAFISH ======= */
+/* ======= SIDEBAR EMPRESARIAL RESPONSIVA - AQUAFISH ======= */
 
 :root {
   --primary: #004b75;
@@ -614,9 +615,7 @@ tfoot td {
 
 /* ======= CONTAINER ======= */
 .sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
+
   height: 100vh;
   width: 265px;
   background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-darker) 100%);
@@ -624,7 +623,7 @@ tfoot td {
   display: flex;
   flex-direction: column;
   transition: var(--transition);
-  z-index: 999;
+  /* z-index: 999; */
   overflow-y: auto;
   border-right: 1px solid var(--border-light);
   box-shadow: var(--shadow);
@@ -760,7 +759,7 @@ tfoot td {
     width: 260px;
     position: fixed;
     height: 100%;
-    top: 0;
+    top: 50px;
     left: 0;
   }
 

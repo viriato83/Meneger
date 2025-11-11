@@ -335,6 +335,7 @@ export default function Dashboard() {
 
         // cálculos de mercadorias (preservado)
         let totalKg = 0; // total mercadorias (kg)
+        let totalKg2 = 0; // total mercadorias Entradas (kg)
         let totalEntradasMt = 0; // entradas em MT (valor_total somado)
         mercT.forEach((e) => {
           const dataMercadoria = new Date(e.data_entrada);
@@ -351,18 +352,21 @@ export default function Dashboard() {
           if (passaMes && passaStock) {
             if (e.tipo != null) {
               totalKg += Number(e.quantidade || 0);
+              totalKg2 += Number(e.quantidade_est|| 0);
               totalEntradasMt += Number(e.valor_total || 0);
             }
           }
         });
 
         setTotalMerc(totalKg);
+        
         setEntradada(Number(totalEntradasMt || 0).toFixed(2));
 
         // cards
         const cards2 = [
           await clientes.total(),
           totalKg,
+          totalKg2,
           quantidadeTotalPagas,
           quantidadeTotalDividaKg,
         ];
@@ -403,6 +407,10 @@ export default function Dashboard() {
             },
             {
               label: "Total Mercadorias",
+              valor: Number(cards[2]).toFixed(2).replace(".", ","),
+            },
+            {
+              label: "Total Mercadorias Disponivel",
               valor: Number(cards[1]).toFixed(2).replace(".", ","),
             },
             {
@@ -701,8 +709,15 @@ export default function Dashboard() {
               iconTint="#c62828"
             />
             <KpiCard
-              title="Total Mercadorias"
+              title="Total Mercadorias Em stock"
               value={`${Number(cards[1] || 0).toFixed(2)} Kg`}
+              icon={<Box />}
+              color="#ef6c001a"
+              iconTint="#ef6c00"
+            />
+            <KpiCard
+              title="Total  Entradas"
+              value={`${Number(cards[2] || 0).toFixed(2)} Kg`}
               icon={<Box />}
               color="#ef6c001a"
               iconTint="#ef6c00"
