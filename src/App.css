@@ -475,7 +475,7 @@ tfoot td {
   z-index: 1200; */
 }
 
-.modal-content {
+/* .modal-content {
   background: white;
   border-radius: 14px;
   padding: 24px 26px;
@@ -484,7 +484,7 @@ tfoot td {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   animation: fadeIn 0.25s ease;
   border-top: 4px solid var(--primary);
-}
+} */
 
 .modal-content p {
   font-size: 14px;
