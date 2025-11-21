@@ -146,7 +146,7 @@ export default function Registar_saida() {
                 }
               />
               <br />
-              <label>Destino:</label>
+              {/* <label>Destino:</label>
               <input
                 type="text"
                 required
@@ -157,18 +157,8 @@ export default function Registar_saida() {
                   setInputs({ ...inputs, destino: e.target.value })
                 }
               />
-              <br />
-              <label>Data de Saída:</label>
-              <input
-                type="date"
-                required
-                className="data_saida"
-                value={inputs.data_saida}
-                onChange={(e) =>
-                  setInputs({ ...inputs, data_saida: e.target.value })
-                }
-              />
-              <br />
+              <br /> */}
+              
 
               {/* 🔹 Campos dinâmicos para cada ração selecionada */}
               <div>

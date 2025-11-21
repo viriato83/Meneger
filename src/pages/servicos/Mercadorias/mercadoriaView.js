@@ -30,14 +30,13 @@ export default function MercadoriaView() {
   const navigate = useNavigate();
   const permissao = sessionStorage.getItem("cargo");
   const [loading, setLoading] = useState(false);
-  const msg = useRef(null);
-  const moda = useRef(null);
+  let msg = new Mensagem();
+    let moda = new Modal();
+
   const repoStco = new repositorioStock();
 
   useEffect(() => {
-    msg.current = new Mensagem();
-    moda.current = new Modal();
-
+ 
     async function carregarDados() {
       setLoading(true);
       try {
@@ -260,6 +259,52 @@ export default function MercadoriaView() {
                 </tr>
               </tfoot>
             </table>
+            <div className="crud">
+              <button
+                className="editar"
+                onClick={() => {
+                    if (id) {
+                        moda.Abrir("deseja editar o "+id)
+                         document.querySelector(".sim").addEventListener("click",()=>{ 
+                            navigate(`/registar-mercadoria/${id}`)
+                          })
+                         document.querySelector(".nao").addEventListener("click",()=>{ 
+                           moda.fechar()
+                          })
+                      } else {
+                        msg.Erro("Por favor, digite um ID válido!");
+                      }
+                  }}
+              >
+                Editar
+              </button>
+              <input
+                type="number"
+                className="crudid"
+                placeholder="Digite o ID"
+                value={id}
+                onChange={(e) => setId(e.target.value)} // Atualiza o estado com o valor digitado
+              />
+              <button
+                onClick={() => {
+                  if (id) {
+                      moda.Abrir("deseja apagar o " + id)
+                       document.querySelector(".sim").addEventListener("click", () => {
+                        repositorio.deletar(id)
+                        moda.fechar()
+                      })
+                       document.querySelector(".nao").addEventListener("click", () => {
+                         moda.fechar()
+                      })
+                  } else {
+                    msg.Erro("Por favor, digite um ID válido!");
+                  }
+                }}
+                className="apagar">Apagar
+              </button>
+
+
+            </div>
 
             {/* 🔹 Botão Excel */}
             {permissao === "admin" && (

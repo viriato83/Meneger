@@ -118,6 +118,14 @@ export default function RegistarMercadoria() {
             <h1>Registo de Mercadorias</h1>
             <br />
             <div className="form">
+              
+            <label>ID:</label>
+              <input
+                type="number"
+                value={id ? id : 0}
+                disabled
+                className="id"
+              />
               <label>Nome:</label>
               <input
                 type="text"
