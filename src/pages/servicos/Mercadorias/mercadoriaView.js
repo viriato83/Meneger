@@ -61,7 +61,7 @@ export default function MercadoriaView() {
           totalQtd += e.quantidade || 0;
           totalQtdEst += e.quantidade_est || 0;
           totalValorEntradas += e.valor_total || 0;
-          totalValorDisponivel += (e.quantidade_est || 0) * (e.valor_un || 0);
+          totalValorDisponivel += (e.quantidade|| 0) * (e.valor_un || 0);
         });
 
         setModelo(dadosModelo);
