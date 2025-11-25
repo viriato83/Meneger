@@ -58,8 +58,8 @@ export default function MercadoriaView() {
         let totalValorDisponivel = 0;
 
         filtradas.forEach((e) => {
-          totalQtd += e.quantidade || 0;
-          totalQtdEst += e.quantidade_est || 0;
+          totalQtd += e.quantidade_est || 0;
+          totalQtdEst += e.quantidade || 0;
           totalValorEntradas += e.valor_total || 0;
           totalValorDisponivel += (e.quantidade|| 0) * (e.valor_un || 0);
         });
@@ -208,8 +208,8 @@ export default function MercadoriaView() {
                         <td>{e.idmercadoria}</td>
                         <td>{e.nome}</td>
                         <td>{e.tipo}</td>
-                        <td>{e.quantidade.toFixed(2)}</td>
                         <td>{e.quantidade_est.toFixed(2)}</td>
+                        <td>{e.quantidade.toFixed(2)}</td>
                         <td>{(e.quantidade - e.quantidade_est).toFixed(2)}</td>
                         <td>{e.valor_un.toFixed(2)} Mt</td>
                         <td>
