@@ -635,7 +635,7 @@ export default function Dashboard() {
   // --- Valores do Resumo Financeiro
   const entradasMT = Number(String(entrada).replace(",", ".")) || 0;
   const saidasMT = Number(saida || 0) || 0;
-  const diferenca = entradasMT - saidasMT;
+  const diferenca =   saidasMT- entradasMT;
 
   // --- Render
   return (
